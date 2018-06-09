@@ -133,6 +133,7 @@ static void *handle_audio(void *args) {
         pthread_mutex_unlock(&audio_data_mutex);
 
         if (read_len == 0) {
+            /* End of stdin */
             break;
         }
 
@@ -251,7 +252,7 @@ int main(int argc, char **argv) {
         syserr("retransmission: pthread_create");
     }
 */
-sleep(100000);
+
     /* pthread join */
     int err = pthread_join(audio_data_thread, NULL);
     if (err != 0) {
