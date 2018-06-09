@@ -52,18 +52,21 @@ pthread_mutex_t audio_data_mutex = PTHREAD_MUTEX_INITIALIZER;
 static void *handle_control_receiver(void *args) {
     char buffer[MAX_UDP_SIZE];
     char reply_buffer[REPLY_SIZE];
-    struct sockaddr_in client_address;
-    socklen_t client_address_len;
+    struct sockaddr_in client_address, server_address;
+    socklen_t client_address_len = sizeof(struct sockaddr_in);
     int new_int, sent_len;
     char *beginning;
+    //int sock_reply = setup_sender(mcast_addr, ctrl_port);
 
-    //int sock = setup_receiver(mcast_addr, ctrl_port);
+    /////////////////// Receiver
 
-    struct sockaddr_in server_address;
-
-    int sock = socket(AF_INET, SOCK_DGRAM, 0); // creating IPv4 UDP socket
+    int sock = socket(AF_INET, SOCK_DGRAM, 0);
     if (sock < 0)
         syserr("socket");
+
+    int enable = 1;
+    if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0)
+        syserr("SO_REUSEADDR failed");
 
     server_address.sin_family = AF_INET;
     server_address.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -72,7 +75,7 @@ static void *handle_control_receiver(void *args) {
     if (bind(sock, (struct sockaddr *) &server_address, (socklen_t) sizeof(server_address)) < 0)
         syserr("bind");
 
-    int sock_reply = setup_sender(mcast_addr, ctrl_port);
+    //////////////////// End receiver
 
     while (true) {
         if (recvfrom(sock, buffer, MAX_UDP_SIZE, 0, (struct sockaddr *)&client_address, &client_address_len) < 0) {
@@ -81,14 +84,14 @@ static void *handle_control_receiver(void *args) {
 
         switch (validate_control_protocol(buffer)) {
             case LOOKUP:
-                sent_len = snprintf(reply_buffer, REPLY_SIZE, "BOREWICZ_HERE %s %" PRIu16 " %s",
+                sent_len = snprintf(reply_buffer, REPLY_SIZE, "BOREWICZ_HERE %s %" PRIu16 " %s\n",
                                     mcast_addr,
                                     data_port,
                                     name);
 
                 assert(sent_len <= REPLY_SIZE);
 
-                if (sendto(sock_reply, reply_buffer, (size_t)sent_len, 0, (struct sockaddr *)&client_address, client_address_len) == sent_len)
+                if (sendto(sock, reply_buffer, (size_t)sent_len, 0, (struct sockaddr *)&client_address, client_address_len) != sent_len)
                     syserr("sendto");
 
                 memset(reply_buffer, 0, REPLY_SIZE);
@@ -242,12 +245,13 @@ int main(int argc, char **argv) {
     if (audio == -1) {
         syserr("audio: pthread_create");
     }
-
+/*
     retransmission = pthread_create(&retransmission_thread, 0, handle_retransmission, NULL);
     if (retransmission == -1) {
         syserr("retransmission: pthread_create");
     }
-
+*/
+sleep(100000);
     /* pthread join */
     int err = pthread_join(audio_data_thread, NULL);
     if (err != 0) {
