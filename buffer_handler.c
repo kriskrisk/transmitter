@@ -9,7 +9,7 @@ extern int current_buffer_idx;
 extern size_t psize;
 extern size_t cyclic_buffer_size;
 
-static void increment_buffer_idx(void) {
+void increment_buffer_idx(void) {
     if (current_buffer_idx == cyclic_buffer_size - 1) {
         current_buffer_idx = 0;
     } else {
@@ -31,5 +31,4 @@ ssize_t read_to_buffer(uint64_t *offset) {
     cyclic_buffer[current_buffer_idx] = new_audio;
 
     *offset = *offset + psize;
-    increment_buffer_idx();
 }

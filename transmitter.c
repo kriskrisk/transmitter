@@ -137,11 +137,17 @@ static void *handle_audio(void *args) {
             break;
         }
 
+        pthread_mutex_lock(&audio_data_mutex);
+
         first_byte = htobe64(cyclic_buffer[current_buffer_idx]->offset);
 
         memcpy(audio_buffer, (void *) &session_id, sizeof(uint64_t));
         memcpy(audio_buffer + sizeof(uint64_t), (void *) &first_byte, sizeof(uint64_t));
         memcpy(audio_buffer, cyclic_buffer[current_buffer_idx]->audio, psize);
+
+        increment_buffer_idx();
+
+        pthread_mutex_unlock(&audio_data_mutex);
 
         if (write(sock, audio_buffer, audio_packet_size) != audio_packet_size)
             syserr("write");
