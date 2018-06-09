@@ -38,7 +38,7 @@ size_t audio_packet_size;
 
 audio_data **cyclic_buffer;
 size_t cyclic_buffer_size;
-int current_buffer_idx; // Index in cyclic_buffer that was read from stdin last time
+int current_buffer_idx = 0; // Index in cyclic_buffer that was read from stdin last time
 
 /* Data about missing datagrams */
 int *missing;
@@ -236,7 +236,7 @@ int main(int argc, char **argv) {
 
     int control_protocol, audio, retransmission;
 
-    if ((cyclic_buffer = (audio_data **) malloc(cyclic_buffer_size * sizeof(audio_data *))) == NULL) {
+    if ((cyclic_buffer = (audio_data **) calloc(cyclic_buffer_size, sizeof(audio_data *))) == NULL) {
         syserr("cyclic buffer allocation");
     }
 
@@ -252,12 +252,11 @@ int main(int argc, char **argv) {
     if (audio == -1) {
         syserr("audio: pthread_create");
     }
-/*
+
     retransmission = pthread_create(&retransmission_thread, 0, handle_retransmission, NULL);
     if (retransmission == -1) {
         syserr("retransmission: pthread_create");
     }
-*/
 
     /* pthread join */
     int err = pthread_join(audio_data_thread, NULL);

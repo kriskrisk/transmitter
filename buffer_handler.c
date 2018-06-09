@@ -30,6 +30,8 @@ ssize_t read_to_buffer(uint64_t *offset) {
     }
 
     audio_data *new_audio = (audio_data *) malloc(sizeof(audio_data));
+    if (new_audio == NULL)
+        syserr("read_to_buffer: malloc");
 
     new_audio->offset = *offset;
     new_audio->audio = audio;
