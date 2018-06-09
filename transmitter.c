@@ -57,7 +57,21 @@ static void *handle_control_receiver(void *args) {
     int new_int, sent_len;
     char *beginning;
 
-    int sock = setup_receiver(mcast_addr, ctrl_port);
+    //int sock = setup_receiver(mcast_addr, ctrl_port);
+
+    struct sockaddr_in server_address;
+
+    int sock = socket(AF_INET, SOCK_DGRAM, 0); // creating IPv4 UDP socket
+    if (sock < 0)
+        syserr("socket");
+
+    server_address.sin_family = AF_INET;
+    server_address.sin_addr.s_addr = htonl(INADDR_ANY);
+    server_address.sin_port = htons(ctrl_port);
+
+    if (bind(sock, (struct sockaddr *) &server_address, (socklen_t) sizeof(server_address)) < 0)
+        syserr("bind");
+
     int sock_reply = setup_sender(mcast_addr, ctrl_port);
 
     while (true) {
@@ -212,7 +226,7 @@ int main(int argc, char **argv) {
 
     int control_protocol, audio, retransmission;
 
-    if ((*cyclic_buffer = (audio_data *) malloc(cyclic_buffer_size * sizeof(audio_data))) == NULL) {
+    if ((cyclic_buffer = (audio_data **) malloc(cyclic_buffer_size * sizeof(audio_data *))) == NULL) {
         syserr("cyclic buffer allocation");
     }
 

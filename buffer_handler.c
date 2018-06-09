@@ -7,10 +7,10 @@
 extern audio_data **cyclic_buffer;
 extern int current_buffer_idx;
 extern size_t psize;
-extern size_t buffer_size;
+extern size_t cyclic_buffer_size;
 
 static void increment_buffer_idx(void) {
-    if (current_buffer_idx == buffer_size - 1) {
+    if (current_buffer_idx == cyclic_buffer_size - 1) {
         current_buffer_idx = 0;
     } else {
         current_buffer_idx++;
