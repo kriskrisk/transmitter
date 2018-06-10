@@ -31,7 +31,7 @@ size_t psize = PSIZE;
 int fsize = FSIZE;
 uint rtime = RTIME;
 char *name = NAME;
-uint64_t session_id;    // Stored in net order
+uint64_t session_id;    // Stored in big endian order
 
 /* Size of one UDP packet with audio */
 size_t audio_packet_size;
@@ -56,9 +56,6 @@ static void *handle_control_receiver(void *args) {
     socklen_t client_address_len = sizeof(struct sockaddr_in);
     int new_int, sent_len;
     char *beginning;
-    //int sock_reply = setup_sender(mcast_addr, ctrl_port);
-
-    /////////////////// Receiver
 
     int sock = socket(AF_INET, SOCK_DGRAM, 0);
     if (sock < 0)
@@ -75,10 +72,8 @@ static void *handle_control_receiver(void *args) {
     if (bind(sock, (struct sockaddr *) &server_address, (socklen_t) sizeof(server_address)) < 0)
         syserr("bind");
 
-    //////////////////// End receiver
-
     while (true) {
-        if (recvfrom(sock, buffer, MAX_UDP_SIZE, 0, (struct sockaddr *)&client_address, &client_address_len) < 0) {
+        if (recvfrom(sock, buffer, MAX_UDP_SIZE, 0, (struct sockaddr *) &client_address, &client_address_len) < 0) {
             syserr("read");
         }
 
@@ -91,7 +86,8 @@ static void *handle_control_receiver(void *args) {
 
                 assert(sent_len <= REPLY_SIZE);
 
-                if (sendto(sock, reply_buffer, (size_t)sent_len, 0, (struct sockaddr *)&client_address, client_address_len) != sent_len)
+                if (sendto(sock, reply_buffer, (size_t) sent_len, 0, (struct sockaddr *) &client_address,
+                           client_address_len) != sent_len)
                     syserr("sendto");
 
                 memset(reply_buffer, 0, REPLY_SIZE);
@@ -100,7 +96,7 @@ static void *handle_control_receiver(void *args) {
                 beginning = buffer + RETMIX_PREFIX_LEN;
 
                 /* Parse list of offsets */
-                while ((new_int = (int)strtol(beginning, &beginning, 10)) != 0) {
+                while ((new_int = (int) strtol(beginning, &beginning, 10)) != 0) {
                     pthread_mutex_lock(&missing_mutex);
                     addNewValueToMissing(new_int);
                     pthread_mutex_unlock(&missing_mutex);
@@ -156,7 +152,7 @@ static void *handle_audio(void *args) {
 }
 
 int cmp_func(const void *a, const void *b) {
-    return (*(int *)a - *(int *)b);
+    return (*(int *) a - *(int *) b);
 }
 
 static void *handle_retransmission(void *args) {
@@ -223,7 +219,7 @@ int main(int argc, char **argv) {
                 name = optarg;
                 break;
             case 'R':
-                rtime = (uint)atoi(optarg);
+                rtime = (uint) atoi(optarg);
                 break;
         }
     }
@@ -232,7 +228,7 @@ int main(int argc, char **argv) {
     session_id = htobe64((uint64_t) time(NULL));
     cyclic_buffer_size = (size_t) ((fsize / psize) + 1) * psize;
     audio_packet_size = psize + 2 * sizeof(uint64_t);
-    missing = (int *)malloc(2 * sizeof(int));
+    missing = (int *) malloc(2 * sizeof(int));
 
     int control_protocol, audio, retransmission;
 

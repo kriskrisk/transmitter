@@ -23,7 +23,7 @@ ssize_t read_to_buffer(uint64_t *offset) {
         syserr("read_to_buffer: malloc");
 
     if (fread((void *) audio, sizeof(char), psize, stdin) != psize) {
-        if(feof(stdin))
+        if (feof(stdin))
             return 0;
 
         syserr("read from stdin");
